@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node0-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      component: node0
+  template:
+    metadata:
+      labels:
+        component: node0
+    spec:
+      serviceAccountName: build-robot
+      # automountServiceAccountToken: false (it's not working)
+      volumes:
+        - name: task-pv-storage
+          persistentVolumeClaim:
+            claimName: task-pv-claim
+            #claimName: azure-disk-pvc
+      containers:
+        - name: node
+          image: registry449.azurecr.io/node-app0:533
+          #image: gauravjain449/node-app0:487
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: "/azure-data"
+              name: task-pv-storage
+          env:
+            - name: MONGO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mongodbconnection
+                  key: MONGOURL
+            # - name: MONGO_URL_XXX
+            #   value: "mongodb+srv://"
+      # imagePullSecrets:
+      #   - name: regcred
+      # nodeSelector:
+      #   disktype: ssd
+
+---
